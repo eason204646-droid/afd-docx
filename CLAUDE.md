@@ -59,8 +59,8 @@ end
 
 img: diagram.png
 cap: 图片标题
-w: 80%
-pos: center
+w: 80%       ; 支持 %, px, cm（如 50%, 400px, 5cm）
+pos: center   ; left / center / right
 
 code: javascript
 console.log("hello");
@@ -84,6 +84,16 @@ br              ; 分页符
 | `afd fmt file.afd` | 格式化 |
 | `afd import file.docx` | 从 Word 导入 |
 | `afd create file.afd` | 从模板创建（仅人工用，模型用 write 即可） |
+| `afd edit file.afd` | 往返编辑（DOCX ↔ AFD，先校验再导出） |
+
+## Dev Scripts
+
+| 命令 | 说明 |
+|------|------|
+| `npm run build` | 编译 TypeScript |
+| `npm test` | 运行测试（45 个用例） |
+| `npm run lint` | ESLint 检查 |
+| `npm run format` | Prettier 格式化 |
 
 ## Agent 工作流
 
@@ -91,3 +101,4 @@ br              ; 分页符
 2. **编辑** — 用 `edit` 按行修改（前缀标记让定位非常精准）
 3. **校验** — `afd validate file.afd`
 4. **导出** — `afd export file.afd docx`
+5. **改代码后** — 先 `npm test && npm run lint`，再提交
