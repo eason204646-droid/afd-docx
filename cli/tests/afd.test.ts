@@ -109,6 +109,13 @@ describe("parse", () => {
     expect(result.document.content[0]).toMatchObject({ type: "image", src: "photo.png", caption: "A photo", width: "50%" });
   });
 
+  it("parses image with inline props on same line", () => {
+    const result = parse('img: photo.png cap: My Photo w: 80% pos: center\n');
+    expect(result.document.content[0]).toMatchObject({
+      type: "image", src: "photo.png", caption: "My Photo", width: "80%", position: "center",
+    });
+  });
+
   it("parses header and footer", () => {
     const result = parse("hdr: Header Text\nftr: Footer Text\nh1: Title\n");
     expect(result.document.header).toBe("Header Text");

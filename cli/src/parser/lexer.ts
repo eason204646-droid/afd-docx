@@ -203,9 +203,29 @@ export function tokenize(source: string): Token[] {
       }
     }
 
-    // Image
-    if (trimmed.startsWith("img: ")) {
-      tokens.push({ type: "image", raw, value: trimmed.slice(5), lineNumber });
+    // Image (supports inline props on same line)
+    if (/^img:\s/.test(trimmed)) {
+      let value = trimmed.replace(/^img:\s*/, "");
+
+      const stripProp = (prefix: string): string | undefined => {
+        const re = new RegExp(`\\s+${prefix}:\\s*(.*?)(?:\\s+(?:cap|w|pos):|\\s*$)`);
+        const m = value.match(re);
+        if (m && m.index !== undefined) {
+          const result = m[1].trim();
+          value = value.slice(0, m.index) + value.slice(m.index + m[0].length);
+          return result;
+        }
+        return undefined;
+      };
+      const inlinePos = stripProp("pos");
+      const inlineW = stripProp("w");
+      const inlineCap = stripProp("cap");
+
+      value = value.trim();
+      tokens.push({ type: "image", raw, value, lineNumber });
+      if (inlineCap) tokens.push({ type: "image-caption", raw: "", value: inlineCap, lineNumber });
+      if (inlineW) tokens.push({ type: "image-width", raw: "", value: inlineW, lineNumber });
+      if (inlinePos) tokens.push({ type: "image-pos", raw: "", value: inlinePos, lineNumber });
       continue;
     }
     if (trimmed.startsWith("cap: ")) {
