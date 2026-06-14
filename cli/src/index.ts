@@ -9,7 +9,7 @@ import { fmtCommand } from "./commands/fmt-cmd.js";
 import { editCommand } from "./commands/edit-cmd.js";
 import { installSkillCommand } from "./commands/install-skill.js";
 
-const VERSION = "0.1.2";
+const VERSION = "0.1.3";
 const VALUE_FLAGS = new Set(["--output", "--template", "--title", "--author", "--content"]);
 
 function parseArgs(input: string[]): { flags: Record<string, string | boolean>; positional: string[] } {

@@ -1,6 +1,6 @@
 {
   "name": "afd-cli",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "AFD (Agent First Document) CLI — AI-native document format toolchain",
   "license": "Apache-2.0",
   "repository": {
