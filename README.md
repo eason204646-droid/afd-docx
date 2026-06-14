@@ -7,7 +7,10 @@ AFD lets you create Word documents by writing plain text. All formatting (bold, 
 ## Installation
 
 ```bash
-# Build from source
+# via npm (recommended)
+npm install -g afd-cli
+
+# or build from source
 git clone https://github.com/eason204646-droid/afd-docx.git
 cd afd-docx/cli
 npm install
