@@ -1,5 +1,5 @@
 {
-  "name": "@afd/cli",
+  "name": "afd-cli",
   "version": "0.1.2",
   "description": "AFD (Agent First Document) CLI — AI-native document format toolchain",
   "license": "Apache-2.0",
@@ -11,9 +11,6 @@
   "homepage": "https://github.com/eason204646-droid/afd-docx#readme",
   "bugs": {
     "url": "https://github.com/eason204646-droid/afd-docx/issues"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "keywords": ["afd", "document", "docx", "word", "cli"],
   "type": "module",
