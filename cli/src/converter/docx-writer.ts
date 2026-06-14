@@ -1,12 +1,13 @@
 import {
   Document as DocxDocument, Packer, Paragraph, TextRun, Table, TableRow,
   TableCell as DocxCell, HeadingLevel, AlignmentType, WidthType,
-  BorderStyle, PageBreak, Header as DocxHeader, Footer as DocxFooter,
-  ShadingType, ExternalHyperlink, LevelFormat
+  PageBreak, Header as DocxHeader, Footer as DocxFooter,
+  ShadingType, ExternalHyperlink, LevelFormat, ImageRun,
+  ISectionOptions,
 } from "docx";
 import * as fs from "fs";
 import * as path from "path";
-import { Document, Inline, Block, ListItem, TableCell } from "../model/types.js";
+import { Document, Inline, Block } from "../model/types.js";
 
 const HEADING_MAP: Record<number, (typeof HeadingLevel)[keyof typeof HeadingLevel]> = {
   1: HeadingLevel.HEADING_1,
@@ -25,10 +26,20 @@ export async function exportDocx(doc: Document, outputPath: string, baseDir: str
     children.push(...elements);
   }
 
-  const sections: any[] = [];
+  const marginEmu = marginToTwip(doc.meta.page?.margin || "2.54cm");
 
-  // Header
-  let headerConfig: any = undefined;
+  const section: ISectionOptions = {
+    properties: {
+      page: {
+        size: getPageSize(doc.meta.page?.size, doc.meta.page?.orientation),
+        margin: {
+          top: marginEmu, bottom: marginEmu, left: marginEmu, right: marginEmu,
+        },
+      },
+    },
+    children,
+  } as ISectionOptions;
+
   if (doc.header) {
     const parts = splitHeaderFooter(doc.header);
     const headerChildren: Paragraph[] = [];
@@ -50,13 +61,11 @@ export async function exportDocx(doc: Document, outputPath: string, baseDir: str
         children: [new TextRun({ text: parts[2], size: 18, font: "Inter" })],
       }));
     }
-    headerConfig = {
+    (section as unknown as Record<string, unknown>).headers = {
       default: new DocxHeader({ children: headerChildren }),
     };
   }
 
-  // Footer
-  let footerConfig: any = undefined;
   if (doc.footer) {
     const parts = splitHeaderFooter(doc.footer);
     const footerChildren: Paragraph[] = [];
@@ -72,31 +81,14 @@ export async function exportDocx(doc: Document, outputPath: string, baseDir: str
         children: [new TextRun({ text: parts[1], size: 18, font: "Inter" })],
       }));
     }
-    footerConfig = {
+    (section as unknown as Record<string, unknown>).footers = {
       default: new DocxFooter({ children: footerChildren }),
     };
   }
 
-  const marginEmu = marginToTwip(doc.meta.page?.margin || "2.54cm");
+  const sections: ISectionOptions[] = [section];
 
-  sections.push({
-    properties: {
-      page: {
-        size: getPageSize(doc.meta.page?.size, doc.meta.page?.orientation),
-        margin: {
-          top: marginEmu,
-          bottom: marginEmu,
-          left: marginEmu,
-          right: marginEmu,
-        },
-      },
-    },
-    headers: headerConfig,
-    footers: footerConfig,
-    children,
-  });
-
-  const numberingConfig = doc.content.some(b => b.type === "ordered-list") ? {
+  const numbering = doc.content.some(b => b.type === "ordered-list") ? {
     config: [{
       reference: "ordered-list",
       levels: [{
@@ -115,26 +107,15 @@ export async function exportDocx(doc: Document, outputPath: string, baseDir: str
 
   const docxDoc = new DocxDocument({
     sections,
-    numbering: numberingConfig as any,
+    numbering,
   });
-  try {
-    const buffer = await Packer.toBuffer(docxDoc);
-    fs.writeFileSync(outputPath, buffer);
-  } catch (e: any) {
-    const msg = e?.message || String(e);
-    if (msg.includes("hex value")) {
-      console.error(`DOCX generation failed: invalid color value in document. Use hex colors (e.g. #FF0000) or named colors.`);
-    } else {
-      console.error(`DOCX generation failed: ${msg}`);
-    }
-    process.exit(1);
-  }
+  const buffer = await Packer.toBuffer(docxDoc);
+  fs.writeFileSync(outputPath, buffer);
 }
 
 function getPageSize(size?: string, orientation?: string): { width: number; height: number } {
   const sz = (size || "a4").toLowerCase();
   const isLandscape = orientation === "landscape";
-  // Sizes in twips (1/20 of a point)
   const sizes: Record<string, { width: number; height: number }> = {
     a4: { width: 11906, height: 16838 },
     letter: { width: 12240, height: 15840 },
@@ -149,11 +130,11 @@ function getPageSize(size?: string, orientation?: string): { width: number; heig
 
 function marginToTwip(margin: string): number {
   const match = margin.match(/^([\d.]+)\s*(cm|mm|in|pt)?$/);
-  if (!match) return 1440; // 1 inch default
+  if (!match) return 1440;
   const val = parseFloat(match[1]);
   const unit = match[2] || "cm";
   switch (unit) {
-    case "cm": return Math.round(val * 567); // 1cm ≈ 567 twips
+    case "cm": return Math.round(val * 567);
     case "mm": return Math.round(val * 56.7);
     case "in": return Math.round(val * 1440);
     case "pt": return Math.round(val * 20);
@@ -191,8 +172,21 @@ function normalizeColor(color: string): string {
   if (NAMED_COLORS[lower]) return NAMED_COLORS[lower];
   if (/^[0-9a-f]{3}$/i.test(c)) return c[0] + c[0] + c[1] + c[1] + c[2] + c[2];
   if (/^[0-9a-f]{6}$/i.test(c)) return c.toUpperCase();
-  console.warn(`Warning: invalid color "${color}", using black`);
   return "000000";
+}
+
+function renderInlineText(inlines: Inline[]): string {
+  return inlines.map(inl => {
+    switch (inl.type) {
+      case "text": return inl.text;
+      case "bold": return renderInlineText(inl.text);
+      case "italic": return renderInlineText(inl.text);
+      case "strikethrough": return renderInlineText(inl.text);
+      case "code": return inl.text;
+      case "link": return inl.text;
+      case "colored": return renderInlineText(inl.text);
+    }
+  }).join("");
 }
 
 export function inlineToRuns(inlines: Inline[], size?: number, font?: string): (TextRun | ExternalHyperlink)[] {
@@ -230,22 +224,20 @@ export function inlineToRuns(inlines: Inline[], size?: number, font?: string): (
   return runs;
 }
 
-function renderInlineText(inlines: Inline[]): string {
-  return inlines.map(inl => {
-    switch (inl.type) {
-      case "text": return inl.text;
-      case "bold": return renderInlineText(inl.text);
-      case "italic": return renderInlineText(inl.text);
-      case "strikethrough": return renderInlineText(inl.text);
-      case "code": return inl.text;
-      case "link": return inl.text;
-      case "colored": return renderInlineText(inl.text);
-    }
-  }).join("");
-}
-
-function ptToHalf(pt: number): number {
-  return Math.round(pt * 2);
+function parseImageWidth(width: string, containerPixels: number = 600): number {
+  const trimmed = width.trim();
+  if (trimmed.endsWith("%")) {
+    const pct = parseFloat(trimmed);
+    return Math.round(containerPixels * pct / 100);
+  }
+  if (trimmed.endsWith("px")) {
+    return parseFloat(trimmed);
+  }
+  if (trimmed.endsWith("cm")) {
+    return Math.round(parseFloat(trimmed) * 37.8);
+  }
+  const num = parseFloat(trimmed);
+  return isNaN(num) ? containerPixels : Math.round(num);
 }
 
 function blockToDocx(block: Block, baseDir: string): (Paragraph | Table)[] {
@@ -277,15 +269,15 @@ function blockToDocx(block: Block, baseDir: string): (Paragraph | Table)[] {
       );
     }
 
-      case "ordered-list": {
-        return block.items.map(item =>
-          new Paragraph({
-            numbering: { reference: "ordered-list", level: 0 },
-            spacing: { after: 60 },
-            children: inlineToRuns(item.text),
-          })
-        );
-      }
+    case "ordered-list": {
+      return block.items.map(item =>
+        new Paragraph({
+          numbering: { reference: "ordered-list", level: 0 },
+          spacing: { after: 60 },
+          children: inlineToRuns(item.text),
+        })
+      );
+    }
 
     case "checklist": {
       return block.items.map(item => {
@@ -342,18 +334,20 @@ function blockToDocx(block: Block, baseDir: string): (Paragraph | Table)[] {
       const imageType = ext === ".png" ? "png" : ext === ".jpg" || ext === ".jpeg" ? "jpeg" : null;
 
       if (imageType) {
-        try {
-          const { ImageRun } = require("docx");
-          const imageRun = new ImageRun({
-            data: imageBuffer,
-            transformation: { width: 400, height: 300 },
-          });
-          return [new Paragraph({ children: [imageRun], alignment: AlignmentType.CENTER })];
-        } catch {
-          return [new Paragraph({
-            children: [new TextRun({ text: `[Image: ${block.src}]`, italics: true })],
-          })];
+        let imgWidth = 400;
+        let imgHeight = 300;
+        if (block.width) {
+          imgWidth = parseImageWidth(block.width);
+          imgHeight = Math.round(imgWidth * 0.75);
         }
+        const alignment = block.position === "center" ? AlignmentType.CENTER
+          : block.position === "right" ? AlignmentType.RIGHT
+          : AlignmentType.LEFT;
+        const imageRun = new ImageRun({
+          data: imageBuffer,
+          transformation: { width: imgWidth, height: imgHeight },
+        });
+        return [new Paragraph({ children: [imageRun], alignment })];
       }
 
       return [new Paragraph({

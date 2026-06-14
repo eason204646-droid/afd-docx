@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { CliError } from "../cli-error.js";
 import { importDocx } from "../converter/docx-reader.js";
 import { formatDocument } from "../formatter/fmt.js";
 import { parse } from "../parser/index.js";
@@ -14,13 +15,11 @@ export async function editCommand(args: string[], options: EditOptions): Promise
   const filePath = args[0];
 
   if (!filePath) {
-    console.error("Usage: afd edit <file.docx|file.afd> [--output <path>] [--keep-old-docx]");
-    process.exit(1);
+    throw new CliError("Usage: afd edit <file.docx|file.afd> [--output <path>] [--keep-old-docx]");
   }
 
   if (!fs.existsSync(filePath)) {
-    console.error(`Error: ${filePath} not found`);
-    process.exit(1);
+    throw new CliError(`${filePath} not found`);
   }
 
   const ext = path.extname(filePath).toLowerCase();
@@ -50,35 +49,26 @@ export async function editCommand(args: string[], options: EditOptions): Promise
     const source = fs.readFileSync(filePath, "utf-8");
     const result = parse(source);
     if (result.errors.length > 0) {
-      console.error(`Error: ${result.errors.length} syntax error(s) found:`);
+      let msg = `${result.errors.length} syntax error(s) found:\n`;
       for (const err of result.errors) {
-        console.error(`  Line ${err.lineNumber}: ${err.message}`);
+        msg += `  Line ${err.lineNumber}: ${err.message}\n`;
       }
-      console.error(`Fix the errors and try again.`);
-      process.exit(1);
+      msg += "Fix the errors and try again.";
+      throw new CliError(msg);
     }
 
     // Export to temp file first for safety
-    try {
-      await exportDocx(result.document, tmpPath, dir);
-      if (options.keepOldDocx && fs.existsSync(outputPath)) {
-        const bakPath = outputPath.replace(/\.docx$/, ".bak.docx");
-        fs.renameSync(outputPath, bakPath);
-        console.log(`Backed up old file to ${bakPath}`);
-      }
-      fs.renameSync(tmpPath, outputPath);
-      console.log(`Exported ${filePath} → ${outputPath}`);
-      console.log(`   Blocks: ${result.document.content.length}`);
-    } catch (e: any) {
-      if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
-      const msg = e?.message || String(e);
-      console.error(`Export failed: ${msg}`);
-      console.error(`The .afd file has been preserved for fixes.`);
-      process.exit(1);
+    await exportDocx(result.document, tmpPath, dir);
+    if (options.keepOldDocx && fs.existsSync(outputPath)) {
+      const bakPath = outputPath.replace(/\.docx$/, ".bak.docx");
+      fs.renameSync(outputPath, bakPath);
+      console.log(`Backed up old file to ${bakPath}`);
     }
+    fs.renameSync(tmpPath, outputPath);
+    console.log(`Exported ${filePath} → ${outputPath}`);
+    console.log(`   Blocks: ${result.document.content.length}`);
 
   } else {
-    console.error(`Unsupported format: ${ext}. Supported: .docx, .afd`);
-    process.exit(1);
+    throw new CliError(`Unsupported format: ${ext}. Supported: .docx, .afd`);
   }
 }

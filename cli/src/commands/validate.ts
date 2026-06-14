@@ -1,16 +1,15 @@
 import * as fs from "fs";
+import { CliError } from "../cli-error.js";
 import { parse } from "../parser/index.js";
 
 export function validateCommand(args: string[]): void {
   const filePath = args[0];
   if (!filePath) {
-    console.error("Usage: afd validate <file.afd>");
-    process.exit(1);
+    throw new CliError("Usage: afd validate <file.afd>");
   }
 
   if (!fs.existsSync(filePath)) {
-    console.error(`Error: ${filePath} not found`);
-    process.exit(1);
+    throw new CliError(`${filePath} not found`);
   }
 
   const source = fs.readFileSync(filePath, "utf-8");
@@ -22,12 +21,11 @@ export function validateCommand(args: string[]): void {
     console.log(`   Blocks: ${contentCount}`);
     if (result.document.meta.title) console.log(`   Title: ${result.document.meta.title}`);
     if (result.document.meta.author) console.log(`   Author: ${result.document.meta.author}`);
-    process.exit(0);
   } else {
-    console.error(`❌ ${filePath} has ${result.errors.length} error(s):`);
+    let msg = `${filePath} has ${result.errors.length} error(s):\n`;
     for (const err of result.errors) {
-      console.error(`   Line ${err.lineNumber}: ${err.message}`);
+      msg += `   Line ${err.lineNumber}: ${err.message}\n`;
     }
-    process.exit(1);
+    throw new CliError(msg.trimEnd());
   }
 }

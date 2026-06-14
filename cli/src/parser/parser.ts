@@ -322,6 +322,12 @@ export function parse(source: string): ParseResult {
         break;
       }
 
+      case "unclosed-block": {
+        errors.push({ lineNumber: token.lineNumber, message: token.value });
+        i++;
+        break;
+      }
+
       default:
         i++;
         break;

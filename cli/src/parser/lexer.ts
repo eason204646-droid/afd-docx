@@ -32,7 +32,8 @@ export type LineType =
   | "raw-start"
   | "raw-line"
   | "raw-end"
-  | "empty";
+  | "empty"
+  | "unclosed-block";
 
 export interface Token {
   type: LineType;
@@ -59,6 +60,8 @@ export function tokenize(source: string): Token[] {
   let inTable = false;
 
   let seenContentBefore = false;
+
+  const MALFORMED_PREFIX = /^(h[1-6]|p|img|cap|w|pos|hdr|ftr|br)[^:\s]/;
 
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i];
@@ -245,7 +248,27 @@ export function tokenize(source: string): Token[] {
     }
 
     // Fallback: treat as paragraph
-    tokens.push({ type: "paragraph", raw, value: trimmed, lineNumber });
+    if (MALFORMED_PREFIX.test(trimmed)) {
+      tokens.push({ type: "comment", raw, value: `[syntax warning] '${trimmed}' — missing colon?`, lineNumber });
+    } else {
+      tokens.push({ type: "paragraph", raw, value: trimmed, lineNumber });
+    }
+  }
+
+  if (inFrontMatter) {
+    tokens.push({ type: "unclosed-block", raw: "", value: "Unclosed front matter (missing closing ---)", lineNumber: lines.length });
+  }
+  if (inCodeBlock) {
+    tokens.push({ type: "unclosed-block", raw: "", value: "Unclosed code block (missing 'end')", lineNumber: lines.length });
+  }
+  if (inRawBlock) {
+    tokens.push({ type: "unclosed-block", raw: "", value: "Unclosed raw block (missing 'end')", lineNumber: lines.length });
+  }
+  if (inList) {
+    tokens.push({ type: "unclosed-block", raw: "", value: "Unclosed list (missing 'end')", lineNumber: lines.length });
+  }
+  if (inTable) {
+    tokens.push({ type: "unclosed-block", raw: "", value: "Unclosed table (missing 'end')", lineNumber: lines.length });
   }
 
   return tokens;

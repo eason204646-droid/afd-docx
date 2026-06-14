@@ -1,4 +1,5 @@
-import { Document, Inline, Block, ListItem } from "../model/types.js";
+import { Document, Block } from "../model/types.js";
+import { renderInlinePlain as renderInline } from "../formatter/render.js";
 
 export function exportMarkdown(doc: Document): string {
   const lines: string[] = [];
@@ -70,18 +71,4 @@ function blockToMarkdown(block: Block, indent: number): string[] {
     default:
       return [];
   }
-}
-
-function renderInline(inlines: Inline[]): string {
-  return inlines.map(inl => {
-    switch (inl.type) {
-      case "text": return inl.text;
-      case "bold": return `**${renderInline(inl.text)}**`;
-      case "italic": return `*${renderInline(inl.text)}*`;
-      case "strikethrough": return `~~${renderInline(inl.text)}~~`;
-      case "code": return `\`${inl.text}\``;
-      case "link": return `[${inl.text}](${inl.url})`;
-      case "colored": return renderInline(inl.text);
-    }
-  }).join("");
 }

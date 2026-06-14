@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { CliError } from "../cli-error.js";
 import { importDocx } from "../converter/docx-reader.js";
 import { formatDocument } from "../formatter/fmt.js";
 
@@ -11,20 +12,17 @@ export async function importCommand(args: string[], options: ImportOptions): Pro
   const filePath = args[0];
 
   if (!filePath) {
-    console.error("Usage: afd import <file.docx> [--output <file.afd>]");
-    process.exit(1);
+    throw new CliError("Usage: afd import <file.docx> [--output <file.afd>]");
   }
 
   if (!fs.existsSync(filePath)) {
-    console.error(`Error: ${filePath} not found`);
-    process.exit(1);
+    throw new CliError(`${filePath} not found`);
   }
 
   const ext = path.extname(filePath).toLowerCase();
 
   if (ext !== ".docx") {
-    console.error(`Unsupported format: ${ext}. Currently only .docx is supported.`);
-    process.exit(1);
+    throw new CliError(`Unsupported format: ${ext}. Currently only .docx is supported.`);
   }
 
   const baseName = path.basename(filePath, ext);

@@ -13,3 +13,17 @@ export function renderInline(inlines: Inline[]): string {
     }
   }).join("");
 }
+
+export function renderInlinePlain(inlines: Inline[]): string {
+  return inlines.map(inl => {
+    switch (inl.type) {
+      case "text": return inl.text;
+      case "bold": return `**${renderInlinePlain(inl.text)}**`;
+      case "italic": return `*${renderInlinePlain(inl.text)}*`;
+      case "strikethrough": return `~~${renderInlinePlain(inl.text)}~~`;
+      case "code": return `\`${inl.text}\``;
+      case "link": return `[${inl.text}](${inl.url})`;
+      case "colored": return renderInlinePlain(inl.text);
+    }
+  }).join("");
+}

@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { CliError } from "../cli-error.js";
 import { parse } from "../parser/index.js";
 import { exportDocx } from "../converter/index.js";
 
@@ -109,24 +110,18 @@ end
 export async function createCommand(args: string[], options: CreateOptions): Promise<void> {
   const filePath = args[0];
   if (!filePath) {
-    console.error("Usage: afd create <file.afd> [--template doc|report|presentation|spreadsheet] [--title ...] [--author ...] [--content ...] [--force] [--no-export]");
-    process.exit(1);
-    return;
+    throw new CliError("Usage: afd create <file.afd> [--template doc|report|presentation|spreadsheet] [--title ...] [--author ...] [--content ...] [--force] [--no-export]");
   }
 
   if (fs.existsSync(filePath) && !options.force) {
-    console.error(`Error: ${filePath} already exists (use --force to overwrite)`);
-    process.exit(1);
-    return;
+    throw new CliError(`${filePath} already exists (use --force to overwrite)`);
   }
 
   const templateName = options.template || "doc";
   let content = TEMPLATES[templateName];
 
   if (!content) {
-    console.error(`Unknown template: ${templateName}. Available: ${Object.keys(TEMPLATES).join(", ")}`);
-    process.exit(1);
-    return;
+    throw new CliError(`Unknown template: ${templateName}. Available: ${Object.keys(TEMPLATES).join(", ")}`);
   }
 
   if (options.title) {

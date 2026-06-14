@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { CliError } from "./cli-error.js";
 import { createCommand } from "./commands/create.js";
 import { validateCommand } from "./commands/validate.js";
 import { exportCommand } from "./commands/export-cmd.js";
@@ -7,86 +8,10 @@ import { importCommand } from "./commands/import-cmd.js";
 import { fmtCommand } from "./commands/fmt-cmd.js";
 import { editCommand } from "./commands/edit-cmd.js";
 
-async function main() {
-  const args = process.argv.slice(2);
-  const cmd = args[0];
-
-  if (!cmd || cmd === "--help" || cmd === "-h") {
-    showHelp();
-    process.exit(0);
-  }
-
-  if (cmd === "--version" || cmd === "-v") {
-    console.log("afd v0.1.0");
-    process.exit(0);
-  }
-
-  try {
-    switch (cmd) {
-      case "create": {
-        const templateIndex = args.indexOf("--template");
-        const template = templateIndex !== -1 ? args[templateIndex + 1] : undefined;
-        const titleIndex = args.indexOf("--title");
-        const title = titleIndex !== -1 ? args[titleIndex + 1] : undefined;
-        const authorIndex = args.indexOf("--author");
-        const author = authorIndex !== -1 ? args[authorIndex + 1] : undefined;
-        const contentIndex = args.indexOf("--content");
-        const content = contentIndex !== -1 ? args[contentIndex + 1] : undefined;
-        const force = args.includes("--force");
-        const noExport = args.includes("--no-export");
-        await createCommand(args.slice(1), { template, title, author, content, force, noExport });
-        break;
-      }
-
-      case "validate":
-        validateCommand(args.slice(1));
-        break;
-
-      case "export": {
-        const outputIndex = args.indexOf("--output");
-        const output = outputIndex !== -1 ? args[outputIndex + 1] : undefined;
-        const keepAfd = args.includes("--keep-afd");
-        const keepOldDocx = args.includes("--keep-old-docx");
-        await exportCommand(args.slice(1), { output, keepAfd, keepOldDocx });
-        break;
-      }
-
-      case "import": {
-        const outputIndex = args.indexOf("--output");
-        const output = outputIndex !== -1 ? args[outputIndex + 1] : undefined;
-        await importCommand(args.slice(1), { output });
-        break;
-      }
-
-      case "edit": {
-        const outputIndex = args.indexOf("--output");
-        const output = outputIndex !== -1 ? args[outputIndex + 1] : undefined;
-        const keepOldDocx = args.includes("--keep-old-docx");
-        await editCommand(args.slice(1), { output, keepOldDocx });
-        break;
-      }
-
-      case "fmt":
-        fmtCommand(args.slice(1));
-        break;
-
-      case "help":
-        showHelp();
-        break;
-
-      default:
-        console.error(`Unknown command: ${cmd}`);
-        console.error("Run 'afd --help' for usage.");
-        process.exit(1);
-    }
-  } catch (err: any) {
-    console.error(`Error: ${err.message}`);
-    process.exit(1);
-  }
-}
+const VERSION = "0.1.1";
 
 function showHelp(): void {
-  console.log(`AFD v0.1.0 — Agent First Document Toolchain
+  console.log(`AFD v${VERSION} — Agent First Document Toolchain
 
 USAGE
   afd <command> [options] [args]
@@ -131,7 +56,82 @@ EXAMPLES
 `);
 }
 
+async function main() {
+  const args = process.argv.slice(2);
+  const cmd = args[0];
+
+  if (!cmd || cmd === "--help" || cmd === "-h") {
+    showHelp();
+    return;
+  }
+
+  if (cmd === "--version" || cmd === "-v") {
+    console.log(`afd v${VERSION}`);
+    return;
+  }
+
+  switch (cmd) {
+    case "create": {
+      const templateIndex = args.indexOf("--template");
+      const template = templateIndex !== -1 ? args[templateIndex + 1] : undefined;
+      const titleIndex = args.indexOf("--title");
+      const title = titleIndex !== -1 ? args[titleIndex + 1] : undefined;
+      const authorIndex = args.indexOf("--author");
+      const author = authorIndex !== -1 ? args[authorIndex + 1] : undefined;
+      const contentIndex = args.indexOf("--content");
+      const content = contentIndex !== -1 ? args[contentIndex + 1] : undefined;
+      const force = args.includes("--force");
+      const noExport = args.includes("--no-export");
+      await createCommand(args.slice(1), { template, title, author, content, force, noExport });
+      break;
+    }
+
+    case "validate":
+      validateCommand(args.slice(1));
+      break;
+
+    case "export": {
+      const outputIndex = args.indexOf("--output");
+      const output = outputIndex !== -1 ? args[outputIndex + 1] : undefined;
+      const keepAfd = args.includes("--keep-afd");
+      const keepOldDocx = args.includes("--keep-old-docx");
+      await exportCommand(args.slice(1), { output, keepAfd, keepOldDocx });
+      break;
+    }
+
+    case "import": {
+      const outputIndex = args.indexOf("--output");
+      const output = outputIndex !== -1 ? args[outputIndex + 1] : undefined;
+      await importCommand(args.slice(1), { output });
+      break;
+    }
+
+    case "edit": {
+      const outputIndex = args.indexOf("--output");
+      const output = outputIndex !== -1 ? args[outputIndex + 1] : undefined;
+      const keepOldDocx = args.includes("--keep-old-docx");
+      await editCommand(args.slice(1), { output, keepOldDocx });
+      break;
+    }
+
+    case "fmt":
+      fmtCommand(args.slice(1));
+      break;
+
+    case "help":
+      showHelp();
+      break;
+
+    default:
+      throw new CliError(`Unknown command: ${cmd}. Run 'afd --help' for usage.`);
+  }
+}
+
 main().catch(err => {
-  console.error(`Fatal error: ${err.message}`);
+  if (err instanceof CliError) {
+    console.error(`Error: ${err.message}`);
+  } else {
+    console.error(`Fatal error: ${err.message}`);
+  }
   process.exit(1);
 });

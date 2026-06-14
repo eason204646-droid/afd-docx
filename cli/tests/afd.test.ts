@@ -291,20 +291,10 @@ describe("create --content", () => {
     }
   });
 
-  it("rejects unknown template", () => {
-    const origError = console.error;
-    const origExit = process.exit;
-    let exitCode = 0;
-    console.error = () => {};
-    process.exit = ((code: number) => { exitCode = code; }) as any;
-
-    try {
-      createCommand(["test.afd"], { template: "nonexistent" });
-      expect(exitCode).toBe(1);
-    } finally {
-      console.error = origError;
-      process.exit = origExit;
-    }
+  it("rejects unknown template", async () => {
+    await expect(
+      createCommand(["test.afd"], { template: "nonexistent" })
+    ).rejects.toThrow("Unknown template: nonexistent");
   });
 });
 
