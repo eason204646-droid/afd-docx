@@ -1,0 +1,24 @@
+; AFD v1
+---
+title: "Quarterly Budget"
+---
+
+sheet: Budget
+cols: 5
+tbl: bordered header
+| Department | Q1 | Q2 | Q3 | Q4 |
+| Engineering | $500K | $550K | $600K | $650K |
+| Marketing | $300K | $320K | $340K | $360K |
+| Sales | $400K | $420K | $440K | $460K |
+| Operations | $200K | $210K | $220K | $230K |
+end
+
+sheet: Headcount
+cols: 3
+tbl: bordered header
+| Department | Current | Planned |
+| Engineering | 45 | 55 |
+| Marketing | 15 | 18 |
+| Sales | 25 | 30 |
+| Operations | 12 | 14 |
+end

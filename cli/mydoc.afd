@@ -1,0 +1,24 @@
+; AFD v1
+---
+title: "Report Title"
+author: "Author"
+date: "2025-06-13"
+page:
+  size: A4
+  margin: 2.5cm
+---
+
+h1: Executive Summary
+p: This report covers...
+
+h2: Background
+p: Provide context here.
+
+h2: Analysis
+tbl: bordered header
+| Metric | Value | Change |
+|  |  |  |
+end
+
+h2: Conclusion
+p: Summarize findings.

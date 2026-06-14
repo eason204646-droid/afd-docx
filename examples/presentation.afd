@@ -1,0 +1,38 @@
+; AFD v1
+---
+title: "AI Strategy 2025"
+author: "Product Team"
+page:
+  size: widescreen
+---
+
+slide: title
+p: **AI Strategy 2025**
+p: Building the Agent-First Future
+p: June 2025
+
+slide: content
+h1: Our Vision
+p: Make documents natively accessible to AI agents — no scripts, no APIs, just plain text.
+
+slide: content
+h1: Key Initiatives
+ul:
+- AFD Format Standardization
+- Agent Skill Development
+- Office Format Compatibility
+- Open Source Community
+end
+
+slide: table
+h1: Roadmap
+tbl: bordered
+| Phase | Timeline | Deliverable |
+| P0 | Q2 | AFD v1 + CLI |
+| P1 | Q3 | Full Office Suite |
+| P2 | Q4 | Ecosystem Launch |
+end
+
+slide: end
+p: **Thank You**
+p: Questions?

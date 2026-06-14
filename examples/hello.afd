@@ -1,0 +1,35 @@
+; AFD v1
+---
+title: "Hello, AFD!"
+author: "AFD User"
+date: "2025-06-13"
+---
+
+h1: Hello, AFD!
+p: This is a **simple** document written in AFD format.
+
+h2: Features
+ul:
+- Line-oriented markers
+- YAML front matter
+- Markdown inline syntax
+- Built-in export to DOCX
+end
+
+h2: Table Example
+tbl: bordered header
+| Feature | Status | Priority |
+| Parser | ✅ Done | High |
+| DOCX Export | ✅ Done | High |
+| DOCX Import | ✅ Done | Medium |
+| PPTX Support | 🔜 Planned | Low |
+end
+
+h2: Code Example
+code: python
+def greet(name):
+    return f"Hello, {name}!"
+print(greet("AFD"))
+end
+
+p: Visit the [project website](https://github.com/afd) for more info.

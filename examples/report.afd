@@ -1,0 +1,63 @@
+; AFD v1
+---
+title: "Q2 2025 Financial Report"
+author: "Finance Team"
+date: "2025-06-13"
+page:
+  size: A4
+  margin: 2.5cm
+styles:
+  h1:
+    size: 24
+    bold: true
+    color: "#1a1a1a"
+  h2:
+    size: 18
+    bold: true
+    color: "#444444"
+  normal:
+    size: 11
+    line-height: 1.6
+---
+
+hdr: Q2 2025 Financial Report | Confidential
+ftr: Page @PAGE
+
+h1: Executive Summary
+p: Q2 2025 showed **strong performance** across all business units, with revenue growing *15% year-over-year* to $45.2M.
+
+h2: Revenue Breakdown
+tbl: bordered header
+| Segment | Q2 2024 | Q2 2025 | Growth |
+| SaaS | $18.5M | $22.1M | +19.5% |
+| Services | $12.3M | $14.0M | +13.8% |
+| Licensing | $8.7M | $9.1M | +4.6% |
+| Total | $39.5M | $45.2M | +14.4% |
+end
+
+h2: Key Initiatives
+ol:
+1. Completed cloud migration for **85%** of customers
+2. Launched AI-powered analytics platform
+3. Expanded to three new markets
+end
+
+h2: Outlook
+p: Based on current momentum, we project Q3 revenue of $48-50M. Key risks include:
+ul:
+- Supply chain constraints in APAC region
+- Currency fluctuation in EMEA markets
+end
+
+p: The full detailed breakdown is available in the appendix.
+
+br
+
+h1: Appendix A: Detailed Metrics
+tbl: bordered header
+| Metric | Target | Actual | Status |
+| NPS Score | 50+ | 62 | ✅ Exceeded |
+| Churn Rate | <5% | 3.2% | ✅ Met |
+| Uptime SLA | 99.9% | 99.95% | ✅ Exceeded |
+| Support Response | <4hrs | 2.1hrs | ✅ Exceeded |
+end
