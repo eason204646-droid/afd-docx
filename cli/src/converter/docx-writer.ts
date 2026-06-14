@@ -3,7 +3,7 @@ import {
   TableCell as DocxCell, HeadingLevel, AlignmentType, WidthType,
   PageBreak, Header as DocxHeader, Footer as DocxFooter,
   ShadingType, ExternalHyperlink, LevelFormat, ImageRun,
-  ISectionOptions,
+  BorderStyle, ISectionOptions,
 } from "docx";
 import * as fs from "fs";
 import * as path from "path";
@@ -21,8 +21,13 @@ const HEADING_MAP: Record<number, (typeof HeadingLevel)[keyof typeof HeadingLeve
 export async function exportDocx(doc: Document, outputPath: string, baseDir: string = "."): Promise<void> {
   const children: (Paragraph | Table)[] = [];
 
+  const hasOrderedList = doc.content.some(b => b.type === "ordered-list");
+  const hasUnorderedList = doc.content.some(b => b.type === "unordered-list");
+
+  const contentWidth = getContentWidth(doc.meta.page?.size, doc.meta.page?.orientation, doc.meta.page?.margin);
+
   for (const block of doc.content) {
-    const elements = blockToDocx(block, baseDir);
+    const elements = blockToDocx(block, baseDir, contentWidth);
     children.push(...elements);
   }
 
@@ -88,21 +93,37 @@ export async function exportDocx(doc: Document, outputPath: string, baseDir: str
 
   const sections: ISectionOptions[] = [section];
 
-  const numbering = doc.content.some(b => b.type === "ordered-list") ? {
-    config: [{
-      reference: "ordered-list",
-      levels: [{
-        level: 0,
-        format: LevelFormat.DECIMAL,
-        text: "%1.",
-        alignment: AlignmentType.LEFT,
-        style: {
-          paragraph: {
-            indent: { left: 720, hanging: 360 }
+  const numbering = hasOrderedList || hasUnorderedList ? {
+    config: [
+      ...(hasOrderedList ? [{
+        reference: "ordered-list",
+        levels: [{
+          level: 0,
+          format: LevelFormat.DECIMAL,
+          text: "%1.",
+          alignment: AlignmentType.LEFT,
+          style: {
+            paragraph: {
+              indent: { left: 720, hanging: 360 }
+            }
           }
-        }
-      }]
-    }]
+        }]
+      }] : []),
+      ...(hasUnorderedList ? [{
+        reference: "bullet-list",
+        levels: [{
+          level: 0,
+          format: LevelFormat.BULLET,
+          text: "\u2022",
+          alignment: AlignmentType.LEFT,
+          style: {
+            paragraph: {
+              indent: { left: 720, hanging: 360 }
+            }
+          }
+        }]
+      }] : []),
+    ],
   } : undefined;
 
   const docxDoc = new DocxDocument({
@@ -126,6 +147,12 @@ function getPageSize(size?: string, orientation?: string): { width: number; heig
   const s = sizes[sz] || sizes.a4;
   if (isLandscape) return { width: s.height, height: s.width };
   return s;
+}
+
+function getContentWidth(pageSize?: string, orientation?: string, margin?: string): number {
+  const sz = getPageSize(pageSize, orientation);
+  const marginTwip = marginToTwip(margin || "2.54cm");
+  return sz.width - 2 * marginTwip;
 }
 
 function marginToTwip(margin: string): number {
@@ -240,7 +267,15 @@ function parseImageWidth(width: string, containerPixels: number = 600): number {
   return isNaN(num) ? containerPixels : Math.round(num);
 }
 
-function blockToDocx(block: Block, baseDir: string): (Paragraph | Table)[] {
+const CELL_MARGINS = { top: 80, bottom: 80, left: 120, right: 120 };
+
+const BORDER_THIN = { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" };
+
+const CELL_BORDERS = {
+  top: BORDER_THIN, bottom: BORDER_THIN, left: BORDER_THIN, right: BORDER_THIN,
+};
+
+function blockToDocx(block: Block, baseDir: string, contentWidth: number = 9000): (Paragraph | Table)[] {
   switch (block.type) {
     case "heading": {
       const sizeMap: Record<number, number> = { 1: 48, 2: 40, 3: 32, 4: 28, 5: 24, 6: 22 };
@@ -262,7 +297,7 @@ function blockToDocx(block: Block, baseDir: string): (Paragraph | Table)[] {
     case "unordered-list": {
       return block.items.map(item =>
         new Paragraph({
-          bullet: { level: 0 },
+          numbering: { reference: "bullet-list", level: 0 },
           spacing: { after: 60 },
           children: inlineToRuns(item.text),
         })
@@ -291,7 +326,7 @@ function blockToDocx(block: Block, baseDir: string): (Paragraph | Table)[] {
 
     case "table": {
       const colCount = block.rows.length > 0 ? block.rows[0].length : 1;
-      const colWidth = Math.floor(9000 / colCount);
+      const colWidth = Math.floor(contentWidth / colCount);
       const columnWidths = Array(colCount).fill(colWidth);
 
       const rows: TableRow[] = block.rows.map((row, rowIdx) => {
@@ -302,6 +337,8 @@ function blockToDocx(block: Block, baseDir: string): (Paragraph | Table)[] {
           return new DocxCell({
             children: paragraphs,
             width: { size: columnWidths[colIdx], type: WidthType.DXA },
+            margins: CELL_MARGINS,
+            borders: block.bordered ? CELL_BORDERS : undefined,
             shading: block.header && rowIdx === 0
               ? { type: ShadingType.CLEAR as any, fill: "F2F2F2" }
               : undefined,
@@ -312,7 +349,7 @@ function blockToDocx(block: Block, baseDir: string): (Paragraph | Table)[] {
 
       const table = new Table({
         rows,
-        width: { size: 100, type: WidthType.PERCENTAGE },
+        width: { size: contentWidth, type: WidthType.DXA },
         columnWidths,
       });
       return [table];

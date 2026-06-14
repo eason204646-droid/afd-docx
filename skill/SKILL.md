@@ -60,6 +60,7 @@ Follow these conventions to produce professional-looking Word documents:
 
 ### Typography
 - **Font pairing:** Pick a sans-serif for body (`Inter`, `Noto Sans`, `Calibri`) and optionally a serif for headings (`Georgia`, `Noto Serif`). Don't mix more than 2 fonts.
+- **Safe defaults:** `Arial`/`Calibri` ship with Windows; `Inter`/`Noto Sans` require manual install.
 - **Sizes:** Body `11pt`, h1 `24pt`, h2 `18pt`, h3 `14pt`. Line-height `1.5` for readability.
 - **Color:** Body `#333333` (soft black) is better than `#000000`. Headings `#1A1A1A`. Avoid light gray text.
 - **Code blocks:** Use `Consolas` or `JetBrains Mono` at `10pt`, background tint `#F5F5F5`.
@@ -88,6 +89,7 @@ styles:
 - Always use `tbl: bordered header` for professional appearance.
 - Keep columns to 3–5; wrap long text instead of making very wide columns.
 - First row becomes gray-backed header row automatically.
+- Cell padding (margins) and DXA-based column widths are applied automatically; column widths adapt to page size.
 
 ### Images
 - Set `w:` to a percentage (`80%`) rather than fixed pixels — it adapts to page width.
