@@ -271,6 +271,16 @@ function mdToAfd(md: string): string {
       continue;
     }
 
+    // AFD block markers — pass through as-is (don't add p: prefix)
+    if (/^(ul|ol|cl|tbl|code|raw|img|cap|w|pos|hdr|ftr|h[1-6]|p):(\s.*)?$/.test(trimmed) ||
+        /^(end|---|br)$/.test(trimmed) ||
+        /^;/.test(trimmed) ||
+        /^(sheet|slide|cols):/.test(trimmed)) {
+      out.push(trimmed);
+      i++;
+      continue;
+    }
+
     // Paragraph
     out.push("p: " + trimmed);
     i++;

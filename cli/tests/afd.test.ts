@@ -340,6 +340,14 @@ describe("mdToAfd conversion via --content", () => {
     expect(result).toContain("end");
   });
 
+  it("passes through raw AFD markers without p: prefix", () => {
+    const result = testFile("ul:\n- item A\n- item B\nend");
+    expect(result).toContain("ul:");
+    expect(result).toContain("end");
+    expect(result).not.toContain("p: ul:");
+    expect(result).not.toContain("p: end");
+  });
+
   it("produces valid AFD", () => {
     const result = testFile("# Hello\n\nThis is a test.\n\n- Item 1\n- Item 2\n\n1. One\n2. Two");
     const parsed = parse(result);
