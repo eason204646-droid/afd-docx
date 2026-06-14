@@ -120,6 +120,7 @@ styles:
 | `afd fmt <file.afd>` | Format/normalize AFD file |
 | `afd import <file.docx>` | Convert Word document to AFD |
 | `afd create <file.afd>` | Create from template (human users) |
+| `afd install-skill [agent]` | Install AI agent skill (claude, opencode) |
 
 ### Safety Options
 
@@ -177,19 +178,18 @@ The `.afd` file is the source of truth. Never produce DOCX files directly — al
 
 ### Install the AFD Skill
 
-To make your agent aware of the AFD format as a reusable skill, copy the skill file to your agent's skills directory:
+To make your AI agent aware of the AFD format:
 
 ```bash
-# Claude Code
-mkdir -p ~/.claude/skills/afd-docx
-cp skill/SKILL.md ~/.claude/skills/afd-docx/SKILL.md
+# Install for all supported agents
+afd install-skill
 
-# opencode
-mkdir -p ~/.config/opencode/skills/afd-docx
-cp skill/SKILL.md ~/.config/opencode/skills/afd-docx/SKILL.md
+# Or install for a specific agent
+afd install-skill claude
+afd install-skill opencode
 ```
 
-After installation, the agent can load the skill using `afd-docx` when creating documents.
+The agent can then load the skill when creating documents.
 
 ## Performance vs Traditional Approaches
 

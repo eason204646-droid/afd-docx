@@ -18,7 +18,8 @@
     "afd": "./dist/index.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "skill"
   ],
   "scripts": {
     "build": "tsc",
