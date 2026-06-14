@@ -1,4 +1,4 @@
-import { Document, Inline, Block } from "../model/types.js";
+import { Document, Block } from "../model/types.js";
 import { renderInline } from "./render.js";
 
 export { renderInline } from "./render.js";
@@ -21,7 +21,7 @@ export function formatDocument(doc: Document): string {
     if (doc.meta.date) lines.push(`date: ${JSON.stringify(doc.meta.date)}`);
     if (doc.meta.page) {
       const p = doc.meta.page;
-      let hasPageProps = !!(p.size || p.margin || p.orientation);
+      const hasPageProps = !!(p.size || p.margin || p.orientation);
       if (hasPageProps) {
         lines.push(`page:`);
         if (p.size) lines.push(`  size: ${JSON.stringify(p.size)}`);

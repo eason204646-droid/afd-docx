@@ -65,7 +65,7 @@ Follow these conventions to produce professional-looking Word documents:
 - **Color:** Body `#333333` (soft black) is better than `#000000`. Headings `#1A1A1A`. Avoid light gray text.
 - **Code blocks:** Use `Consolas` or `JetBrains Mono` at `10pt`, background tint `#F5F5F5`.
 
-### Styles (via front matter)
+### Styles (via front matter — actively applied)
 ```yaml
 styles:
   h1:
@@ -84,6 +84,7 @@ styles:
     font: "Inter"
     color: "#333333"
 ```
+> ⚠️ These styles are **actively applied** during DOCX export — `size`, `bold`, `font`, and `color` in each style block will be reflected in the generated Word document.
 
 ### Tables
 - Always use `tbl: bordered header` for professional appearance.
@@ -95,6 +96,8 @@ styles:
 - Set `w:` to a percentage (`80%`) rather than fixed pixels — it adapts to page width.
 - Use `pos: center` for standalone images, `pos: left` for inline.
 - Place images after the paragraph that introduces them.
+- **Supported formats:** PNG, JPEG, GIF, BMP, WebP.
+- **Dimensions:** When `w:` is omitted, the image's actual dimensions from the file header are used. When `w:` is specified, height is calculated proportionally using the real aspect ratio.
 
 ### Headers & Footers
 - Use `hdr:` and `ftr:` sparingly — only when the document is 3+ pages.

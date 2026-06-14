@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { CliError } from "../cli-error.js";
 import { parse } from "../parser/index.js";
-import { exportDocx, exportMarkdown } from "../converter/index.js";
+import { exportDocx, exportMarkdown, exportHtml } from "../converter/index.js";
 
 interface ExportOptions {
   output?: string;
@@ -58,17 +58,7 @@ export async function exportCommand(args: string[], options: ExportOptions): Pro
       .replace(/`([^`]+)`/g, "$1");
     fs.writeFileSync(tmpPath, plain, "utf-8");
   } else if (format === "html") {
-    const md = exportMarkdown(result.document);
-    const html = `<html><body>${md.split("\n\n").map(p => {
-      if (p.startsWith("# ")) return `<h1>${p.slice(2)}</h1>`;
-      if (p.startsWith("## ")) return `<h2>${p.slice(3)}</h2>`;
-      if (p.startsWith("|")) return `<table>${p.split("\n").filter(l => l.startsWith("|")).map(r => {
-        const cells = r.split("|").filter(c => c.trim());
-        if (r.includes("---")) return "";
-        return `<tr>${cells.map(c => `<td>${c.trim()}</td>`).join("")}</tr>`;
-      }).join("")}</table>`;
-      return `<p>${p}</p>`;
-    }).join("\n")}</body></html>`;
+    const html = exportHtml(result.document);
     fs.writeFileSync(tmpPath, html, "utf-8");
   } else {
     throw new CliError(`Unknown format: ${format}. Supported: docx, md, html, txt`);

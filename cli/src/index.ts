@@ -9,6 +9,30 @@ import { fmtCommand } from "./commands/fmt-cmd.js";
 import { editCommand } from "./commands/edit-cmd.js";
 
 const VERSION = "0.1.1";
+const VALUE_FLAGS = new Set(["--output", "--template", "--title", "--author", "--content"]);
+
+function parseArgs(input: string[]): { flags: Record<string, string | boolean>; positional: string[] } {
+  const flags: Record<string, string | boolean> = {};
+  const positional: string[] = [];
+  let i = 0;
+  while (i < input.length) {
+    const arg = input[i];
+    if (arg.startsWith("--")) {
+      const name = arg.slice(2);
+      if (VALUE_FLAGS.has(arg) && i + 1 < input.length && !input[i + 1].startsWith("--")) {
+        flags[name] = input[i + 1];
+        i += 2;
+      } else {
+        flags[name] = true;
+        i += 1;
+      }
+    } else {
+      positional.push(arg);
+      i++;
+    }
+  }
+  return { flags, positional };
+}
 
 function showHelp(): void {
   console.log(`AFD v${VERSION} — Agent First Document Toolchain
@@ -70,52 +94,48 @@ async function main() {
     return;
   }
 
+  const rest = args.slice(1);
+  const { flags, positional } = parseArgs(rest);
+
   switch (cmd) {
-    case "create": {
-      const templateIndex = args.indexOf("--template");
-      const template = templateIndex !== -1 ? args[templateIndex + 1] : undefined;
-      const titleIndex = args.indexOf("--title");
-      const title = titleIndex !== -1 ? args[titleIndex + 1] : undefined;
-      const authorIndex = args.indexOf("--author");
-      const author = authorIndex !== -1 ? args[authorIndex + 1] : undefined;
-      const contentIndex = args.indexOf("--content");
-      const content = contentIndex !== -1 ? args[contentIndex + 1] : undefined;
-      const force = args.includes("--force");
-      const noExport = args.includes("--no-export");
-      await createCommand(args.slice(1), { template, title, author, content, force, noExport });
+    case "create":
+      await createCommand(positional, {
+        template: flags.template as string | undefined,
+        title: flags.title as string | undefined,
+        author: flags.author as string | undefined,
+        content: flags.content as string | undefined,
+        force: !!flags.force,
+        noExport: !!flags["no-export"],
+      });
       break;
-    }
 
     case "validate":
-      validateCommand(args.slice(1));
+      validateCommand(positional);
       break;
 
-    case "export": {
-      const outputIndex = args.indexOf("--output");
-      const output = outputIndex !== -1 ? args[outputIndex + 1] : undefined;
-      const keepAfd = args.includes("--keep-afd");
-      const keepOldDocx = args.includes("--keep-old-docx");
-      await exportCommand(args.slice(1), { output, keepAfd, keepOldDocx });
+    case "export":
+      await exportCommand(positional, {
+        output: flags.output as string | undefined,
+        keepAfd: !!flags["keep-afd"],
+        keepOldDocx: !!flags["keep-old-docx"],
+      });
       break;
-    }
 
-    case "import": {
-      const outputIndex = args.indexOf("--output");
-      const output = outputIndex !== -1 ? args[outputIndex + 1] : undefined;
-      await importCommand(args.slice(1), { output });
+    case "import":
+      await importCommand(positional, {
+        output: flags.output as string | undefined,
+      });
       break;
-    }
 
-    case "edit": {
-      const outputIndex = args.indexOf("--output");
-      const output = outputIndex !== -1 ? args[outputIndex + 1] : undefined;
-      const keepOldDocx = args.includes("--keep-old-docx");
-      await editCommand(args.slice(1), { output, keepOldDocx });
+    case "edit":
+      await editCommand(positional, {
+        output: flags.output as string | undefined,
+        keepOldDocx: !!flags["keep-old-docx"],
+      });
       break;
-    }
 
     case "fmt":
-      fmtCommand(args.slice(1));
+      fmtCommand(positional);
       break;
 
     case "help":

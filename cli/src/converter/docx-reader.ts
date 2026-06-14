@@ -1,7 +1,6 @@
 import * as fs from "fs";
-import * as path from "path";
 import mammoth from "mammoth";
-import { Document, Inline, Block, ListItem, TableCell } from "../model/types.js";
+import { Document, Inline, ListItem, TableCell } from "../model/types.js";
 
 export async function importDocx(filePath: string): Promise<Document> {
   const buffer = fs.readFileSync(filePath);
@@ -25,7 +24,7 @@ function htmlToDocument(html: string): Document {
   }
 
   // Normalize: add newlines after block elements
-  let normalized = html
+  const normalized = html
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/h([1-6])>/gi, "</h$1>\n")
     .replace(/<\/p>/gi, "</p>\n")
@@ -152,7 +151,7 @@ function htmlToDocument(html: string): Document {
   return doc;
 }
 
-function extractListItems(block: string, type: string): ListItem[] {
+function extractListItems(block: string, _type: string): ListItem[] {
   const items: ListItem[] = [];
   const liRegex = /<li[^>]*>([\s\S]*?)<\/li>/gi;
   let match;

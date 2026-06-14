@@ -1,6 +1,6 @@
 import { parse as parseYaml } from "yaml";
-import { Document, Inline, ListItem, TableCell, Block, StyleDef } from "../model/types.js";
-import { tokenize, Token } from "./lexer.js";
+import { Document, Inline, ListItem, TableCell, StyleDef } from "../model/types.js";
+import { tokenize } from "./lexer.js";
 
 /**
  * Parse inline formatting from a text string.
