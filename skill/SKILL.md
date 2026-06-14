@@ -40,7 +40,7 @@ styles:
 | `ol:` ... `end` | Numbered list |
 | `cl:` ... `end` | Checklist (`[x]` / `[ ]`) |
 | `tbl:` ... `end` | Table (`\| cell \| cell \|`) |
-| `img:` + `cap:` / `w:` / `pos:` | Image |
+| `img:` + `cap:` / `w:` / `pos:` | Image (`w:` supports %, px, cm; `pos:` left/center/right) |
 | `code:lang` ... `end` | Code block |
 | `hdr:` / `ftr:` | Header / Footer (`@PAGE` = page number) |
 | `br` | Page break |
@@ -51,9 +51,11 @@ styles:
 
 ## CLI Commands
 ```
-afd export <file.afd> docx    Export to Word (main command)
-afd validate <file.afd>       Validate syntax
-afd fmt <file.afd>            Format/normalize
-afd import <file.docx>        Import Word to AFD
-afd create <file.afd>         Create from template (human-only)
+afd export <file.afd> docx              Export to Word (main command)
+afd export <file.afd> docx --keep-afd   Export, keep .afd
+afd export <file.afd> md                Export to Markdown
+afd validate <file.afd>                 Validate syntax
+afd fmt <file.afd>                      Format/normalize
+afd import <file.docx>                  Import Word to AFD
+afd edit <file.docx|file.afd>           Round-trip edit
 ```
