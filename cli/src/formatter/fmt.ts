@@ -103,6 +103,9 @@ function formatBlock(block: Block): string[] {
       const opts = [];
       if (block.bordered) opts.push("bordered");
       if (block.header) opts.push("header");
+      if (block.columnWidths && block.columnWidths.length > 0) {
+        opts.push(`cols:${block.columnWidths.join(",")}`);
+      }
       const result = [`tbl: ${opts.join(" ")}`];
       for (const row of block.rows) {
         result.push(`| ${row.map(c => renderInline(c.text)).join(" | ")} |`);

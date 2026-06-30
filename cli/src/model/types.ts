@@ -28,7 +28,7 @@ export type Block =
   | { type: "unordered-list"; items: ListItem[] }
   | { type: "ordered-list"; items: ListItem[] }
   | { type: "checklist"; items: ListItem[] }
-  | { type: "table"; bordered: boolean; header: boolean; rows: TableCell[][] }
+  | { type: "table"; bordered: boolean; header: boolean; rows: TableCell[][]; columnWidths?: string[] }
   | { type: "image"; src: string; caption?: string; width?: string; position?: string }
   | { type: "code"; lang?: string; content: string }
   | { type: "raw"; format?: string; content: string }

@@ -46,7 +46,7 @@ const H_PREFIX = /^(h[1-6]):\s*/;
 const UL_PREFIX = /^ul:\s*$/;
 const OL_PREFIX = /^ol:\s*$/;
 const CL_PREFIX = /^cl:\s*$/;
-const TBL_PREFIX = /^tbl:(\s+(bordered|header|bordered\s+header|header\s+bordered))?\s*$/;
+const TBL_PREFIX = /^tbl:\s*(.*)$/;
 const CODE_PREFIX = /^code:\s*(.*)$/;
 const RAW_PREFIX = /^raw:\s*(.*)$/;
 

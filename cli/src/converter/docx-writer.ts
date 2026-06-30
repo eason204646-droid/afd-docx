@@ -3,8 +3,9 @@ import {
   TableCell as DocxCell, HeadingLevel, AlignmentType, WidthType,
   PageBreak, Header as DocxHeader, Footer as DocxFooter,
   ShadingType, ExternalHyperlink, LevelFormat, ImageRun,
-  BorderStyle, ISectionOptions,
+  BorderStyle, ISectionOptions, PageNumber,
 } from "docx";
+import { parseInline } from "../parser/index.js";
 import * as fs from "fs";
 import * as path from "path";
 import { Document, Inline, Block, StyleDef } from "../model/types.js";
@@ -76,25 +77,26 @@ export async function exportDocx(doc: Document, outputPath: string, baseDir: str
     children,
   } as ISectionOptions;
 
+  const hfProps = { size: 18, font: "Inter" };
   if (doc.header) {
     const parts = splitHeaderFooter(doc.header);
     const headerChildren: Paragraph[] = [];
     if (parts[0]) {
       headerChildren.push(new Paragraph({
         alignment: AlignmentType.LEFT,
-        children: [new TextRun({ text: parts[0], size: 18, font: "Inter" })],
+        children: renderHeaderFooterText(parts[0], hfProps),
       }));
     }
     if (parts[1]) {
       headerChildren.push(new Paragraph({
         alignment: AlignmentType.CENTER,
-        children: [new TextRun({ text: parts[1], size: 18, font: "Inter" })],
+        children: renderHeaderFooterText(parts[1], hfProps),
       }));
     }
     if (parts[2]) {
       headerChildren.push(new Paragraph({
         alignment: AlignmentType.RIGHT,
-        children: [new TextRun({ text: parts[2], size: 18, font: "Inter" })],
+        children: renderHeaderFooterText(parts[2], hfProps),
       }));
     }
     (section as unknown as Record<string, unknown>).headers = {
@@ -108,13 +110,19 @@ export async function exportDocx(doc: Document, outputPath: string, baseDir: str
     if (parts[0]) {
       footerChildren.push(new Paragraph({
         alignment: AlignmentType.LEFT,
-        children: [new TextRun({ text: parts[0], size: 18, font: "Inter" })],
+        children: renderHeaderFooterText(parts[0], hfProps),
       }));
     }
     if (parts.length > 1 && parts[1]) {
       footerChildren.push(new Paragraph({
         alignment: AlignmentType.CENTER,
-        children: [new TextRun({ text: parts[1], size: 18, font: "Inter" })],
+        children: renderHeaderFooterText(parts[1], hfProps),
+      }));
+    }
+    if (parts.length > 2 && parts[2]) {
+      footerChildren.push(new Paragraph({
+        alignment: AlignmentType.RIGHT,
+        children: renderHeaderFooterText(parts[2], hfProps),
       }));
     }
     (section as unknown as Record<string, unknown>).footers = {
@@ -277,8 +285,13 @@ function blockToDocx(
 
     case "table": {
       const colCount = block.rows.length > 0 ? block.rows[0].length : 1;
-      const colWidth = Math.floor(contentWidth / colCount);
-      const columnWidths = Array(colCount).fill(colWidth);
+      let columnWidths: number[];
+      if (block.columnWidths && block.columnWidths.length === colCount) {
+        columnWidths = block.columnWidths.map(w => parseImageWidth(w, contentWidth));
+      } else {
+        const colWidth = Math.floor(contentWidth / colCount);
+        columnWidths = Array(colCount).fill(colWidth);
+      }
 
       const rows: TableRow[] = block.rows.map((row, rowIdx) => {
         const cells = row.map((cell, colIdx) => {
@@ -327,7 +340,7 @@ function blockToDocx(
       let imgHeight: number;
 
       if (block.width) {
-        imgWidth = parseImageWidth(block.width);
+        imgWidth = parseImageWidth(block.width, contentWidth);
         imgHeight = dims ? Math.round(imgWidth * (dims.height / dims.width)) : Math.round(imgWidth * 0.75);
       } else if (dims) {
         imgWidth = dims.width;
@@ -517,4 +530,22 @@ function marginToTwip(margin: string): number {
 function splitHeaderFooter(text: string): string[] {
   const parts = text.split("|").map(s => s.trim());
   return [parts[0] || "", parts[1] || "", parts[2] || ""];
+}
+
+function renderHeaderFooterText(text: string, baseProps: RunProps): (TextRun | ExternalHyperlink)[] {
+  if (!text.includes("@PAGE") && !text.includes("@TOTAL_PAGES")) {
+    return inlineToRuns(parseInline(text), baseProps);
+  }
+  const parts = text.split(/(@PAGE|@TOTAL_PAGES)/g);
+  const runs: (TextRun | ExternalHyperlink)[] = [];
+  for (const part of parts) {
+    if (part === "@PAGE") {
+      runs.push(new TextRun({ children: [PageNumber.CURRENT], ...baseProps }));
+    } else if (part === "@TOTAL_PAGES") {
+      runs.push(new TextRun({ children: [PageNumber.TOTAL_PAGES], ...baseProps }));
+    } else if (part) {
+      runs.push(...inlineToRuns(parseInline(part), baseProps));
+    }
+  }
+  return runs;
 }

@@ -54,6 +54,31 @@ describe("parseInline", () => {
       { type: "strikethrough", text: [{ type: "text", text: "strike" }] },
     ]);
   });
+
+  it("handles escaped bold markers", () => {
+    expect(parseInline("\\*\\*not bold\\*\\*")).toEqual([
+      { type: "text", text: "**not bold**" },
+    ]);
+  });
+
+  it("handles escaped italic markers", () => {
+    expect(parseInline("\\*not italic\\*")).toEqual([
+      { type: "text", text: "*not italic*" },
+    ]);
+  });
+
+  it("handles escaped backtick", () => {
+    expect(parseInline("\\`not code\\`")).toEqual([
+      { type: "text", text: "`not code`" },
+    ]);
+  });
+
+  it("mixes escaped and real formatting", () => {
+    expect(parseInline("escaped \\*\\*bold\\*\\* + **real**")).toEqual([
+      { type: "text", text: "escaped **bold** + " },
+      { type: "bold", text: [{ type: "text", text: "real" }] },
+    ]);
+  });
 });
 
 /* ── Document Parsing ── */
@@ -99,6 +124,24 @@ describe("parse", () => {
     expect(result.document.content[0]).toMatchObject({ type: "table" });
   });
 
+  it("parses table with column widths", () => {
+    const result = parse("tbl: bordered header cols:30%,30%,40%\n| A | B | C |\n| 1 | 2 | 3 |\nend\n");
+    const table = result.document.content[0];
+    expect(table).toMatchObject({ type: "table" });
+    if (table.type === "table") {
+      expect(table.columnWidths).toEqual(["30%", "30%", "40%"]);
+    }
+  });
+
+  it("round-trips table with column widths", () => {
+    const src = "tbl: bordered header cols:30%,30%,40%\n| A | B | C |\nend\n";
+    const result = parse(src);
+    const formatted = formatDocument(result.document);
+    expect(formatted).toContain("cols:30%,30%,40%");
+    const result2 = parse(formatted);
+    expect(result2.errors).toHaveLength(0);
+  });
+
   it("parses code block", () => {
     const result = parse("code: js\nconsole.log('hi');\nend\n");
     expect(result.document.content[0]).toMatchObject({ type: "code", lang: "js" });
@@ -120,6 +163,12 @@ describe("parse", () => {
     const result = parse("hdr: Header Text\nftr: Footer Text\nh1: Title\n");
     expect(result.document.header).toBe("Header Text");
     expect(result.document.footer).toBe("Footer Text");
+  });
+
+  it("parses header/footer with inline formatting", () => {
+    const result = parse("hdr: **Bold** and *italic*\nftr: Page @PAGE\nh1: Title\n");
+    expect(result.document.header).toBe("**Bold** and *italic*");
+    expect(result.document.footer).toBe("Page @PAGE");
   });
 
   it("parses page break", () => {
@@ -243,6 +292,28 @@ describe("example files", () => {
     const doc = await importDocx(tmpPath);
     expect(doc.content.length).toBeGreaterThan(0);
     fs.unlinkSync(tmpPath);
+  });
+});
+
+/* ── Header/Footer with inline formatting ── */
+
+describe("header/footer inline formatting", () => {
+  it("round-trips header with bold/italic through formatDocument", () => {
+    const result = parse("hdr: **Bold** and *italic*\np: Hello\n");
+    const formatted = formatDocument(result.document);
+    expect(formatted).toContain("hdr: **Bold** and *italic*");
+    const result2 = parse(formatted);
+    expect(result2.errors).toHaveLength(0);
+    expect(result2.document.header).toBe("**Bold** and *italic*");
+  });
+
+  it("round-trips footer with @PAGE through formatDocument", () => {
+    const result = parse("ftr: Page @PAGE of @TOTAL_PAGES\np: Content\n");
+    const formatted = formatDocument(result.document);
+    expect(formatted).toContain("ftr: Page @PAGE of @TOTAL_PAGES");
+    const result2 = parse(formatted);
+    expect(result2.errors).toHaveLength(0);
+    expect(result2.document.footer).toBe("Page @PAGE of @TOTAL_PAGES");
   });
 });
 

@@ -18,11 +18,26 @@ export function parseInline(text: string): Inline[] {
     }
   }
 
+  function isEscaped(pos: number): boolean {
+    let count = 0;
+    let p = pos - 1;
+    while (p >= 0 && text[p] === "\\") { count++; p--; }
+    return count % 2 === 1;
+  }
+
   while (i < text.length) {
     let matched = false;
 
+    // Escape: \ followed by a marker char → literal
+    if (text[i] === "\\" && i + 1 < text.length && "*`[{~".includes(text[i + 1])) {
+      textBuffer += text[i + 1];
+      i += 2;
+      matched = true;
+      continue;
+    }
+
     // Bold: **text**
-    if (text.startsWith("**", i)) {
+    if (text.startsWith("**", i) && !isEscaped(i)) {
       const end = text.indexOf("**", i + 2);
       if (end !== -1) {
         flushText();
@@ -34,7 +49,7 @@ export function parseInline(text: string): Inline[] {
     }
 
     // Italic: *text* (but not **)
-    if (!matched && text[i] === "*" && text[i + 1] !== "*") {
+    if (!matched && text[i] === "*" && text[i + 1] !== "*" && !isEscaped(i)) {
       const end = text.indexOf("*", i + 1);
       if (end !== -1) {
         flushText();
@@ -46,7 +61,7 @@ export function parseInline(text: string): Inline[] {
     }
 
     // Strikethrough: ~~text~~
-    if (!matched && text.startsWith("~~", i)) {
+    if (!matched && text.startsWith("~~", i) && !isEscaped(i)) {
       const end = text.indexOf("~~", i + 2);
       if (end !== -1) {
         flushText();
@@ -58,7 +73,7 @@ export function parseInline(text: string): Inline[] {
     }
 
     // Code: `text`
-    if (!matched && text[i] === "`") {
+    if (!matched && text[i] === "`" && !isEscaped(i)) {
       const end = text.indexOf("`", i + 1);
       if (end !== -1) {
         flushText();
@@ -70,7 +85,7 @@ export function parseInline(text: string): Inline[] {
     }
 
     // Link: [text](url)
-    if (!matched && text[i] === "[") {
+    if (!matched && text[i] === "[" && !isEscaped(i)) {
       const closeBracket = text.indexOf("](", i);
       if (closeBracket !== -1) {
         const closeParen = text.indexOf(")", closeBracket + 2);
@@ -87,7 +102,7 @@ export function parseInline(text: string): Inline[] {
     }
 
     // Colored text: {color:red}text{/color}
-    if (!matched && text[i] === "{" && text.startsWith("{color:", i)) {
+    if (!matched && text[i] === "{" && text.startsWith("{color:", i) && !isEscaped(i)) {
       const colonEnd = text.indexOf("}", i);
       if (colonEnd !== -1) {
         const color = text.slice(i + 7, colonEnd);
@@ -232,10 +247,15 @@ export function parse(source: string): ParseResult {
         const rows: TableCell[][] = [];
         let bordered = false;
         let header = false;
+        let columnWidths: string[] | undefined;
         const opts = token.value;
         if (opts) {
           bordered = opts.includes("bordered");
           header = opts.includes("header");
+          const colsMatch = opts.match(/cols:\s*([\d%.,\s]+)/);
+          if (colsMatch) {
+            columnWidths = colsMatch[1].split(",").map(s => s.trim()).filter(s => s.length > 0);
+          }
         }
         while (i < tokens.length && tokens[i].type !== "table-end") {
           if (tokens[i].type === "table-row") {
@@ -245,7 +265,7 @@ export function parse(source: string): ParseResult {
           i++;
         }
         if (i < tokens.length) i++; // skip table-end
-        doc.content.push({ type: "table", bordered, header, rows });
+        doc.content.push({ type: "table", bordered, header, rows, columnWidths });
         break;
       }
 
